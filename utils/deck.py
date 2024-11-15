@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from pokemontcgsdk import Card
 
 
@@ -38,12 +40,18 @@ class Deck:
             else:
                 del category[card.id]
 
-    def cards(self) -> list[dict[str, (Card, int)]]:
+    def cards(self) -> list[Tuple[Card, int]]:
         return [
-            {"card": category[card_id]["card"], "quantity": category[card_id]["quantity"]}
+            (category[card_id]["card"], category[card_id]["quantity"])
             for category in [self.trainer_cards, self.pokemon_cards, self.energy_cards]
             for card_id in category
         ]
+
+    def count_of(self, card: Card) -> int:
+        category = self._get_card_category(card)
+        if category is not None and card.id in category:
+            return category[card.id]["quantity"]
+        return 0
 
     def __len__(self) -> int:
         return sum(

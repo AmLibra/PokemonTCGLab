@@ -28,6 +28,9 @@ if 'decks' not in st.session_state:
 if "show_new_deck_input" not in st.session_state:
     st.session_state.show_new_deck_input = False
 
+if "view" not in st.session_state:
+    st.session_state.view = "deck_manager"
+
 # Main app interface
 st.title(APP_TITLE, anchor=False)
 

@@ -24,7 +24,7 @@ def display_cards(cards: list[Card]) -> None:
             with col2:
                 b = st.button("Add", key=card.id + "/" + str(idx))
                 if b:
-                    st.session_state.cards[str(uuid.uuid4())] = {"card": card, "quantity": quantity}
+                    st.session_state.cards[card.id] = (card, quantity)
                     save_card_to_collection(card, quantity)
                     st.toast(f"Successfully added {quantity} x '{card.name}'")
             st.title("", anchor=False)
