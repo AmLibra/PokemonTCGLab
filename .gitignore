@@ -1,4 +1,10 @@
-
 .env
 /.idea
 *.pyc
+**/__pycache__
+**/*.pyc
+components/__pycache__/card_shop.cpython-312.pyc
+components/__pycache__/card_viewer.cpython-312.pyc
+components/__pycache__/deck_manager.cpython-312.pyc
+utils/__pycache__/pokemon_api.cpython-312.pyc
+utils/__pycache__/storage.cpython-312.pyc

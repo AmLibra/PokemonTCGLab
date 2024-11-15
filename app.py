@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from components.card_shop import show_card_shop
-from utils.pokemon_api import Set
+from pokemontcgsdk import Set
 from components.deck_manager import view_decks
 from components.card_viewer import view_cards
 from utils.storage import load_cards_from_collection, load_decks_from_collection
