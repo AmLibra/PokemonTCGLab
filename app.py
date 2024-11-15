@@ -6,17 +6,21 @@ from components.deck_manager import view_decks
 from components.card_viewer import view_cards
 from utils.storage import load_cards_from_collection, load_decks_from_collection
 
+APP_TITLE = "Pokémon Card Manager"
+SECTION_NAMES = ["Card Shop", "Deck Manager", "Owned Cards"]
+SECTION_ICONS = ["plus-circle", "folder", "cards"]
+
 # Set the page to use wide mode
-st.set_page_config(layout="wide", page_title="Pokémon Card Manager")
+st.set_page_config(layout="wide", page_title=APP_TITLE)
 
 # cache the API response
 @st.cache_data
-def get_sets():
+def get_sets() -> list[Set]:
     return Set.all()
 
 # Initialize session state to store cards and decks
 if 'cards' not in st.session_state:
-    st.session_state.cards = load_cards_from_collection()()
+    st.session_state.cards = load_cards_from_collection()
 
 if 'decks' not in st.session_state:
     st.session_state.decks = load_decks_from_collection()
@@ -25,22 +29,22 @@ if "show_new_deck_input" not in st.session_state:
     st.session_state.show_new_deck_input = False
 
 # Main app interface
-st.title("Pokémon Card Manager", anchor=False)
+st.title(APP_TITLE, anchor=False)
 
 # Top Navigation Menu using option_menu
 menu_option = option_menu(
     menu_title=None,  # Hide the title for a cleaner look
-    options=["Card Shop", "Decks", "Owned Cards"],  # Menu options
-    icons=["plus-circle", "folder", "cards"],  # Optional icons for each menu option
+    options=SECTION_NAMES,  # List of menu options
+    icons=SECTION_ICONS,  # Icons for each option
     menu_icon="cast",  # Optional main menu icon
-    default_index=0,  # Which option is selected by default
+    default_index=2,  # Which option is selected by default
     orientation="horizontal",  # Horizontal to simulate a navigation bar
 )
 
 # Conditional display based on user selection
-if menu_option == "Card Shop":
+if menu_option == SECTION_NAMES[0]:
     show_card_shop(get_sets())
-elif menu_option == "Decks":
+elif menu_option == SECTION_NAMES[1]:
     view_decks()
-elif menu_option == "Owned Cards":
+elif menu_option == SECTION_NAMES[2]:
     view_cards()
