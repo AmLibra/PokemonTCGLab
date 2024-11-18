@@ -1,19 +1,21 @@
 import os
 import pickle
-from typing import List, Dict, Union, Tuple
+from typing import Dict, Tuple
 
 from pokemontcgsdk import Card
 
 from utils.deck import Deck
 
-cards_path = "data/cards.pkl"
-decks_path = "data/decks.pkl"
+data_path = "data"
+cards_file = "cards.pkl"
+decks_file = "decks.pkl"
 
 
-def save_deck_to_collection(deck: Deck) -> None:
+def save_deck_to_collection(deck: Deck, name: str) -> None:
     decks: Dict[str, Deck] = {}
-    if os.path.exists(decks_path):
-        with open(decks_path, "rb") as f:
+    user_decks_path = os.path.join(data_path, name, decks_file)
+    if os.path.exists(user_decks_path):
+        with open(user_decks_path, "rb") as f:
             try:
                 decks = pickle.load(f)
             except EOFError:
@@ -24,14 +26,19 @@ def save_deck_to_collection(deck: Deck) -> None:
     # Replace or add the deck in the dictionary
     decks[deck.name] = deck
 
-    with open(decks_path, "wb") as f:
+    with open(user_decks_path, "wb") as f:
         pickle.dump(decks, f)  # type: ignore
 
 
-def load_decks_from_collection() -> Dict[str, Deck]:
+def load_decks_from_collection(name: str) -> Dict[str, Deck]:
     decks: Dict[str, Deck] = {}
-    if os.path.exists(decks_path):
-        with open(decks_path, "rb") as f:
+    user_decks_path = os.path.join(data_path, name, decks_file)
+    # create the data directory if it doesn't exist
+    os.makedirs("data", exist_ok=True)
+    os.makedirs(os.path.join(data_path, name), exist_ok=True)
+
+    if os.path.exists(user_decks_path):
+        with open(user_decks_path, "rb") as f:
             try:
                 loaded_decks = pickle.load(f)
                 decks = {deck.name: deck for deck in loaded_decks.values()}
@@ -40,10 +47,11 @@ def load_decks_from_collection() -> Dict[str, Deck]:
     return decks
 
 
-def remove_deck_from_collection(deck_name: str) -> None:
+def remove_deck_from_collection(deck_name: str, name: str) -> None:
     decks: Dict[str, Deck] = {}
-    if os.path.exists(decks_path):
-        with open(decks_path, "rb") as f:
+    user_decks_path = os.path.join(data_path, name, decks_file)
+    if os.path.exists(user_decks_path):
+        with open(user_decks_path, "rb") as f:
             try:
                 decks = pickle.load(f)
             except EOFError:
@@ -53,12 +61,13 @@ def remove_deck_from_collection(deck_name: str) -> None:
     if deck_name in decks:
         decks.pop(deck_name)
 
-    with open(decks_path, "wb") as f:
+    with open(user_decks_path, "wb") as f:
         pickle.dump(decks, f)  # type: ignore
 
 
-def save_card_to_collection(card: Card, quantity: int) -> None:
+def save_card_to_collection(card: Card, quantity: int, name: str) -> None:
     cards: Dict[str, Tuple[Card, int]] = {}
+    cards_path = os.path.join(data_path, name, cards_file)
     if os.path.exists(cards_path):
         with open(cards_path, "rb") as f:
             try:
@@ -78,8 +87,13 @@ def save_card_to_collection(card: Card, quantity: int) -> None:
         pickle.dump(cards, f)  # type: ignore
 
 
-def load_cards_from_collection() -> Dict[str, Tuple[Card, int]]:
+def load_cards_from_collection(name: str) -> Dict[str, Tuple[Card, int]]:
     cards: Dict[str, Tuple[Card, int]] = {}
+    # create the data directory if it doesn't exist
+    os.makedirs("data", exist_ok=True)
+    os.makedirs(os.path.join(data_path, name), exist_ok=True)
+
+    cards_path = os.path.join(data_path, name, cards_file)
     if os.path.exists(cards_path):
         with open(cards_path, "rb") as f:
             try:
@@ -89,7 +103,8 @@ def load_cards_from_collection() -> Dict[str, Tuple[Card, int]]:
     return cards
 
 
-def remove_one_card_from_collection(card_id: str) -> None:
+def remove_one_card_from_collection(card_id: str, name: str) -> None:
+    cards_path = os.path.join(data_path, name, cards_file)
     if os.path.exists(cards_path):
         with open(cards_path, "rb") as f:
             try:
