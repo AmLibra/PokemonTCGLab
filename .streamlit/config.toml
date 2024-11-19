@@ -1,5 +1,3 @@
-# .streamlit/config.toml
-
 [server]
 headless = true
 runOnSave = true

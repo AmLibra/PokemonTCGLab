@@ -1,6 +1,9 @@
+from typing import Tuple
+
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
+from pokemontcgsdk import Card
 from streamlit_authenticator import LoginError, Hasher
 from streamlit_option_menu import option_menu
 from yaml import SafeLoader
@@ -8,8 +11,7 @@ from yaml import SafeLoader
 from components.card_shop import show_card_shop
 from components.card_viewer import view_cards
 from components.deck_manager import view_decks
-# noinspection PyUnresolvedReferences
-from utils.deck import Deck  # required for type hinting correctly when loading decks from collection
+from utils.deck import Deck  # For type hinting
 from utils.pokemon_api import get_sets
 from utils.storage import load_cards_from_collection, load_decks_from_collection
 
@@ -17,26 +19,38 @@ APP_TITLE = "Pokémon Card Manager"
 SECTION_NAMES = ["Card Shop", "Deck Manager", "Owned Cards"]
 SECTION_ICONS = ["plus-circle", "folder", "cards"]
 
-# Set the page to use wide mode
-st.set_page_config(layout="wide", page_title=APP_TITLE)
+# Set the page to wide mode and define the title
+st.set_page_config(layout="wide", page_title=APP_TITLE, initial_sidebar_state="expanded")
 
 
-# Loading config file
 @st.cache_data
-def load_config():
+def load_config() -> dict:
+    """
+    Load the configuration file for authentication and app settings.
+    Returns:
+        dict: Parsed configuration dictionary.
+    """
     with open('config.yaml', 'r', encoding='utf-8') as f:
-        c = yaml.load(f, Loader=SafeLoader)
-    return c
+        return yaml.load(f, Loader=SafeLoader)
 
 
-def save_config(c):
-    Hasher([""]).hash_passwords(c['credentials'])
+def save_config(config: dict) -> None:
+    """
+    Save the updated configuration back to the YAML file.
+    Args:
+        config (dict): Configuration dictionary to save.
+    """
+    Hasher([""]).hash_passwords(config['credentials'])
     with open('config.yaml', 'w', encoding='utf-8') as f:
-        yaml.dump(c, f)
+        yaml.dump(config, f)
 
 
-def navbar():
-    # inject some CSS to hide the hamburger menu and reduce padding
+def navbar() -> str:
+    """
+    Create the navigation menu at the top of the app.
+    Returns:
+        str: The name of the selected menu option.
+    """
     st.markdown(
         """
         <style>
@@ -51,22 +65,25 @@ def navbar():
         """,
         unsafe_allow_html=True,
     )
-    # Top Navigation Menu using option_menu
-    menu_option = option_menu(
-        menu_title=None,  # Hide the title for a cleaner look
-        options=SECTION_NAMES,  # List of menu options
-        icons=SECTION_ICONS,  # Icons for each option
-        menu_icon="cast",  # Optional main menu icon
-        default_index=2,  # Which option is selected by default
-        orientation="horizontal",  # Menu orientation
+    return option_menu(
+        menu_title=None,
+        options=SECTION_NAMES,
+        icons=SECTION_ICONS,
+        menu_icon="cast",
+        default_index=2,
+        orientation="horizontal",
     )
-    return menu_option
 
 
-def sidebar():
+def sidebar(authenticator: stauth.Authenticate) -> None:
+    """
+    Render the sidebar with user information and account options.
+    Args:
+        authenticator (stauth.Authenticate): Authentication controller instance.
+    """
     with st.sidebar:
         st.title(APP_TITLE, anchor=False)
-        st.write(f"Welcome to the Pokémon Card Manager, {st.session_state["name"]}!")
+        st.write(f"Welcome to the Pokémon Card Manager, {st.session_state['name']}!")
         col1, col2 = st.columns(2, vertical_alignment="top")
         with col1:
             st.button("Account", use_container_width=True)
@@ -78,47 +95,66 @@ def sidebar():
                 st.session_state.cards = None
                 st.session_state.view = "deck_manager"
                 st.session_state.show_new_deck_input = False
+                st.rerun()
 
 
-config = load_config()
+def load_collections(user: str) -> (dict[str, Tuple[Card, int]], dict[str, Deck]):
+    """
+    Load card and deck collections for a user.
+    Args:
+        user (str): Username for which to load collections.
+    Returns:
+        Tuple[list, list]: Loaded cards and decks.
+    """
+    cards = load_cards_from_collection(user)
+    decks = load_decks_from_collection(user)
+    return cards, decks
 
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-)
 
-try:
-    authenticator.login()
-except LoginError as e:
-    st.error(e)
+def main():
+    """
+    Main function to run the Streamlit app.
+    """
+    config = load_config()
 
-if st.session_state['authentication_status']:
-    if 'cards' not in st.session_state:
-        st.session_state.cards = load_cards_from_collection(st.session_state["name"])
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days'],
+    )
 
-    if 'decks' not in st.session_state:
-        st.session_state.decks = load_decks_from_collection(st.session_state["name"])
+    try:
+        authenticator.login()
+    except LoginError as e:
+        st.error(e)
 
-    if "show_new_deck_input" not in st.session_state:
-        st.session_state.show_new_deck_input = False
+    if st.session_state.get('authentication_status'):
+        # Lazy initialization of session state variables
+        if 'cards' not in st.session_state or 'decks' not in st.session_state:
+            st.session_state['cards'], st.session_state['decks'] = load_collections(st.session_state['name'])
 
-    if "view" not in st.session_state:
-        st.session_state.view = "deck_manager"
+        if "show_new_deck_input" not in st.session_state:
+            st.session_state.show_new_deck_input = False
 
-    # Main app interface
-    nav = navbar()
-    # Conditional display based on user selection
-    if nav == SECTION_NAMES[0]:
-        show_card_shop(get_sets())
-    elif nav == SECTION_NAMES[1]:
-        view_decks()
-    elif nav == SECTION_NAMES[2]:
-        view_cards()
-    sidebar()
+        if "view" not in st.session_state:
+            st.session_state.view = "deck_manager"
 
-elif st.session_state['authentication_status'] is False:
-    st.error("Username/password is incorrect")
-elif st.session_state['authentication_status'] is None:
-    st.warning("Please enter your username and password")
+        # Main app interface
+        nav = navbar()
+        if nav == SECTION_NAMES[0]:
+            show_card_shop(get_sets())
+        elif nav == SECTION_NAMES[1]:
+            view_decks()
+        elif nav == SECTION_NAMES[2]:
+            view_cards()
+        sidebar(authenticator)
+
+    elif st.session_state.get('authentication_status') is False:
+        st.error("Username/password is incorrect")
+    elif st.session_state.get('authentication_status') is None:
+        st.warning("Please enter your username and password")
+
+
+if __name__ == "__main__":
+    main()
