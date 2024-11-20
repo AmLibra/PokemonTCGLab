@@ -251,7 +251,9 @@ def show_deck_builder(deck: Deck) -> None:
     col1, col2, col3, col4, col5 = st.columns([5, 1, 1, 1, 1], gap="small", vertical_alignment="bottom")
     with col1:
         is_legal, error = deck.legal()
-        st.header(f"{deck.name} ({len(deck)} cards) {'✅' if is_legal else '❌\n\n' + error}", anchor=False)
+        st.header(f"{deck.name} ({len(deck)} cards) {'✅' if is_legal else '❌'}", anchor=False)
+        if not is_legal:
+            st.write(error)
     with col2:
         if st.button("Save", use_container_width=True):
             st.session_state.view = "deck_manager"

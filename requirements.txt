@@ -1,0 +1,5 @@
+streamlit_authenticator
+streamlit
+pokemontcgsdk
+streamlit_option_menu
+python-dotenv
